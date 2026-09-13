@@ -1,0 +1,2 @@
+# Aucune dépendance externe pour le MVP.
+# Le projet utilise uniquement des modules de la bibliothèque standard Python (ex. sqlite3).

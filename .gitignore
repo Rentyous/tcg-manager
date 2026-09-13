@@ -1,0 +1,22 @@
+# Environnement virtuel
+.venv/
+venv/
+env/
+
+# Bytecode et cache Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Base de données locale
+*.db
+*.sqlite
+*.sqlite3
+
+# Fichiers d'IDE
+.vscode/
+.idea/
+
+# Fichiers Windows
+Thumbs.db
+desktop.ini
