@@ -143,7 +143,7 @@ langue         TEXT
 
 tcg            TEXT
 market\_price   REAL
-image          TEXT
+card\_image     TEXT
 
 ### Table `purchases`
 
@@ -152,7 +152,7 @@ Champ            Type
 \---
 
 id               INTEGER PRIMARY KEY
-card\_id          TEXT
+card\_id          INTEGER (clé étrangère vers cards.id)
 quantity         INTEGER
 purchase\_price   REAL
 condition        TEXT
