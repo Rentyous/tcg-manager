@@ -17,6 +17,9 @@ __pycache__/
 .vscode/
 .idea/
 
+# Configuration locale de Claude Code (agents, réglages)
+.claude/
+
 # Fichiers Windows
 Thumbs.db
 desktop.ini

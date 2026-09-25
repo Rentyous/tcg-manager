@@ -39,6 +39,12 @@ Fonctionnalité
 * Supprimer une carte de la collection
 * Calcul automatique de la quantité              
 
+Précisions sur le comportement :
+
+* **Ajout** : une seule entrée de menu couvre l'ajout d'une nouvelle carte et l'ajout d'exemplaires. L'utilisateur saisit d'abord les quatre champs qui identifient la carte (voir « Identité d'une carte », §3). Si la carte existe déjà, seul l'achat (quantité, prix, état, date, lieu) est demandé et il s'ajoute à la carte existante. Sinon, le reste des informations de la carte est demandé, suivi de son premier achat.
+* **Recherche** : par nom, sur tout ou partie du nom, sans tenir compte de la casse.
+* **Suppression** : la carte est recherchée par nom. Si plusieurs cartes correspondent, la rareté est demandée pour affiner. Une confirmation est demandée avant de supprimer la carte et tous ses achats.
+
 
 
 ### 2.2 Sauvegarde
@@ -69,6 +75,8 @@ Fonctionnalité
 }
 ```
 
+**Identité d'une carte.** Deux cartes sont considérées comme la même carte si leur `name`, leur `card_set_id`, leur `rarity` et leur `langue` sont identiques (comparaison exacte). Une même impression en deux raretés ou en deux langues correspond donc à deux cartes distinctes, chacune avec son propre historique d'achats. Les autres champs (`set`, `type`, `tcg`, `market_price`, `card_image`) ne participent pas à cette comparaison.
+
 ### Achat
 
 ``` python
@@ -93,7 +101,7 @@ Fonctionnalité
 * Good (GD)
 * Lightly Played (LP)
 * Played (PL)
-* Bad / Poor (PO)
+* Bad (PO)
 
 \---
 
@@ -107,11 +115,15 @@ tcg-manager/
 ├── main.py
 ├── collection.py
 ├── models.py
-
 ├── storage.py
 ├── ui.py
-└── collection.json
+├── requirements.txt
+├── README.md
+├── tests/
+└── Documentation/
 ```
+
+La base de données SQLite `collection.db` est créée automatiquement à la racine au premier lancement. Elle n'est pas versionnée (ignorée par Git) car elle contient les données réelles de la collection.
 
 
 
@@ -126,8 +138,9 @@ Module            Rôle
 `main.py`         Boucle principale et menu
 `ui.py`           Interactions utilisateur
 `collection.py`   Logique métier
-`models.py`       Fonctions utilitaires (`get\_id`, `get\_quantity`)
-`storage.py`      Sauvegarde / chargement
+`models.py`       Structures de données (`Carte`, `Achat`) et fonctions utilitaires (`get\_id`, `get\_quantity`)
+`storage.py`      Sauvegarde / chargement (SQLite), création et migration du schéma
+`tests/`          Tests unitaires (`unittest`)
 
 \---
 
