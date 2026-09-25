@@ -36,6 +36,7 @@ Fonctionnalité
 * Rechercher une carte par son nom                
 * Ajouter une nouvelle carte                      
 * Ajouter des exemplaires d'une carte existante   
+* Supprimer une carte de la collection
 * Calcul automatique de la quantité              
 
 
@@ -74,9 +75,15 @@ Fonctionnalité
 {
     "quantity": 2,
     "purchase\_price": 8.5,
-    "condition": "Near Mint"
+    "condition": "Near Mint",
+    "purchase\_date": "2026-09-25",
+    "purchase\_location": "Cardmarket"
 }
 ```
+
+`purchase_date` est la date d'achat. Elle se saisit et s'affiche au format français `JJ-MM-AAAA` et vaut la date du jour par défaut lors de la saisie. En interne (modèle et base), elle est stockée au format ISO `AAAA-MM-JJ`, qui permet de trier les achats par ordre chronologique. Elle peut être vide pour les achats enregistrés avant l'ajout de ce champ.
+
+`purchase_location` est le lieu d'achat (texte libre : boutique, site, événement...).
 
 `condition` décrit l'état physique des exemplaires de cet achat. Échelle standard TCG (de la meilleure à la moins bonne) :
 
@@ -156,6 +163,8 @@ card\_id          INTEGER (clé étrangère vers cards.id)
 quantity         INTEGER
 purchase\_price   REAL
 condition        TEXT
+purchase\_date    TEXT (date ISO AAAA-MM-JJ)
+purchase\_location TEXT
 
 Relation :
 
@@ -170,13 +179,14 @@ Relation :
 
 ``` text
 ===============================
-      One Piece Manager
+        TCG Manager
 ===============================
 
 1 - Afficher la collection
 2 - Ajouter une carte
 3 - Rechercher une carte
-4 - Quitter
+4 - Supprimer une carte
+5 - Quitter
 ```
 
 \---

@@ -53,11 +53,36 @@ def _create_tables(conn):
             quantity INTEGER,
             purchase_price REAL,
             condition TEXT,
+            purchase_date TEXT,
+            purchase_location TEXT,
             FOREIGN KEY (card_id) REFERENCES cards(id)
         )
         """
     )
+    # Migration : une base créée avant l'ajout de la date et du lieu d'achat n'a
+    # pas ces colonnes (CREATE TABLE IF NOT EXISTS ne les ajoute pas). Les achats
+    # existants gardent NULL, on n'invente pas de date pour eux.
+    colonnes = {row["name"] for row in conn.execute("PRAGMA table_info(purchases)")}
+    for colonne in ("purchase_date", "purchase_location"):
+        if colonne not in colonnes:
+            conn.execute(f"ALTER TABLE purchases ADD COLUMN {colonne} TEXT")
     conn.commit()
+
+
+def _insert_purchase(conn, card_id, purchase):
+    """Insère un achat lié à `card_id` (sans commit) et retourne le curseur."""
+    return conn.execute(
+        "INSERT INTO purchases (card_id, quantity, purchase_price, condition, purchase_date, purchase_location) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            card_id,
+            purchase.quantity,
+            purchase.purchase_price,
+            purchase.condition,
+            purchase.purchase_date,
+            purchase.purchase_location,
+        ),
+    )
 
 
 def load_collection():
@@ -74,7 +99,8 @@ def load_collection():
         collection = []
         for row in card_rows:
             purchase_rows = conn.execute(
-                "SELECT quantity, purchase_price, condition FROM purchases WHERE card_id = ?",
+                "SELECT quantity, purchase_price, condition, purchase_date, purchase_location "
+                "FROM purchases WHERE card_id = ?",
                 (row["id"],),
             ).fetchall()
             purchases = [
@@ -82,6 +108,8 @@ def load_collection():
                     quantity=p["quantity"],
                     purchase_price=p["purchase_price"],
                     condition=p["condition"],
+                    purchase_date=p["purchase_date"],
+                    purchase_location=p["purchase_location"],
                 )
                 for p in purchase_rows
             ]
@@ -133,10 +161,7 @@ def add_card(card):
         )
         card_id = cur.lastrowid
         for purchase in card.purchases:
-            conn.execute(
-                "INSERT INTO purchases (card_id, quantity, purchase_price, condition) VALUES (?, ?, ?, ?)",
-                (card_id, purchase.quantity, purchase.purchase_price, purchase.condition),
-            )
+            _insert_purchase(conn, card_id, purchase)
         conn.commit()
         return card_id
     finally:
@@ -163,12 +188,36 @@ def add_purchase(card, purchase):
         if row is None:
             raise ValueError(f"Carte introuvable en base pour l'achat : {get_id(card)}")
         card_id = row["id"]
-        cur = conn.execute(
-            "INSERT INTO purchases (card_id, quantity, purchase_price, condition) VALUES (?, ?, ?, ?)",
-            (card_id, purchase.quantity, purchase.purchase_price, purchase.condition),
-        )
+        cur = _insert_purchase(conn, card_id, purchase)
         conn.commit()
         return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def delete_card(card):
+    """Supprime une carte de la base, ainsi que tous ses achats.
+
+    `card` : un objet `Carte` déjà existant en base ; il est retrouvé via
+    get_id(card), comme add_purchase. Les lignes de purchases liées sont
+    supprimées avant la ligne de cards (contrainte de clé étrangère,
+    foreign_keys activées via PRAGMA), dans une seule transaction (un seul
+    commit à la fin).
+    Lève ValueError si aucune carte correspondante n'est trouvée en base.
+    """
+    conn = get_connection()
+    try:
+        name, card_set_id, rarity, langue = get_id(card)
+        row = conn.execute(
+            "SELECT id FROM cards WHERE name = ? AND card_set_id = ? AND rarity = ? AND langue = ?",
+            (name, card_set_id, rarity, langue),
+        ).fetchone()
+        if row is None:
+            raise ValueError(f"Carte introuvable en base pour la suppression : {get_id(card)}")
+        card_id = row["id"]
+        conn.execute("DELETE FROM purchases WHERE card_id = ?", (card_id,))
+        conn.execute("DELETE FROM cards WHERE id = ?", (card_id,))
+        conn.commit()
     finally:
         conn.close()
 
@@ -205,10 +254,7 @@ def save_collection(collection):
             )
             card_id = cur.lastrowid
             for purchase in card.purchases:
-                conn.execute(
-                    "INSERT INTO purchases (card_id, quantity, purchase_price, condition) VALUES (?, ?, ?, ?)",
-                    (card_id, purchase.quantity, purchase.purchase_price, purchase.condition),
-                )
+                _insert_purchase(conn, card_id, purchase)
         conn.commit()
     finally:
         conn.close()

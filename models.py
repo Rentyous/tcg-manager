@@ -4,19 +4,32 @@ Cf. Cahier des charges §3 (Modèle de données) et §4 (Architecture logicielle
 """
 
 from dataclasses import dataclass, field
+from datetime import date
 
 # Échelle standard TCG (§3), à titre de référence. Pas de validation de
 # saisie ici : voir §8, hors périmètre du MVP.
 CONDITIONS = ["Mint", "Near Mint", "Excellent", "Good", "Lightly Played", "Played", "Bad"]
 
 
+def aujourdhui():
+    """Date du jour au format ISO (YYYY-MM-DD), utilisée comme date d'achat par défaut."""
+    return date.today().isoformat()
+
+
 @dataclass
 class Achat:
-    """Un achat : un lot d'exemplaires d'une carte dans un état donné."""
+    """Un achat : un lot d'exemplaires d'une carte dans un état donné.
+
+    `purchase_date` (ISO YYYY-MM-DD) vaut la date du jour par défaut ; elle peut
+    être None pour les achats enregistrés avant l'ajout de ce champ.
+    `purchase_location` est le lieu d'achat (texte libre, vide si non renseigné).
+    """
 
     quantity: int
     purchase_price: float
     condition: str
+    purchase_date: str | None = field(default_factory=aujourdhui)
+    purchase_location: str | None = ""
 
 
 @dataclass
